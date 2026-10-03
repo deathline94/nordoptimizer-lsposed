@@ -1,25 +1,50 @@
 name: Build and release
 
-# Every push to main that changes anything beyond docs: bumps the patch version automatically
+# Every push to main that changes anything beyond docs bumps the patch version automatically
 # (1.8.1 -> 1.8.2 -> ... -> 1.8.9 -> 1.9 -> 1.9.1 ...), commits the bump, builds the signed APK,
-# and publishes a tagged GitHub release with checksums. Doc-only pushes do nothing.
+# and publishes a tagged GitHub release with checksums. Doc-only pushes (README, LICENSE, this
+# workflow, ...) are detected by diffing the push and skip the release entirely - paths filters
+# are deliberately not used for that: GitHub's push path matching can swallow mixed doc+code
+# pushes, which would silently drop a release.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "LICENSE"
-      - ".gitignore"
-      - ".gitattributes"
 
 permissions:
   contents: write
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.gate.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect docs-only push
+        id: gate
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE="HEAD~1"
+          fi
+          FILES=$(git diff --name-only "$BEFORE" HEAD || echo "app/build.gradle.kts")
+          echo "changed files: $FILES"
+          DOCS_ONLY=true
+          for f in $FILES; do
+            case "$f" in
+              *.md|LICENSE|.gitignore|.gitattributes|.github/*) ;;
+              *) DOCS_ONLY=false ;;
+            esac
+          done
+          echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+
   release:
-    # The version-bump commit below is authored by the bot and marked [skip ci]; this guard makes the
-    # loop-break explicit even if the message marker is ever edited away.
-    if: github.actor != 'github-actions[bot]'
+    needs: changes
+    # The version-bump commit is authored by the bot and marked [skip ci]; the actor check keeps
+    # the loop broken even if that marker is ever edited away.
+    if: needs.changes.outputs.docs_only != 'true' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,5 +131,3 @@ jobs:
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.sha256" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.md5"
-
-# Patch version rolls over at ten: 1.8.9 -> 1.9 -> 1.9.1
