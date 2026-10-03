@@ -91,10 +91,10 @@ Long-press any switch in the app for the same explanation in place.
 
 ## Updates
 
-Every commit to the `main` branch is built automatically: check the
-[Releases](https://github.com/deathline94/nordoptimizer-lsposed/releases) page for the newest signed APK
-with its SHA-256 and MD5 checksums. Install over the top (`adb install -r` or sideload) and force-stop
-NordVPN once.
+Versioning is automatic — you never touch it. Every push to `main` that changes anything beyond docs bumps
+the patch version (1.8.1 → 1.8.2 → … → 1.8.9 → 1.9 → 1.9.1 …), builds a signed APK and publishes it under
+[Releases](https://github.com/deathline94/nordoptimizer-lsposed/releases) with SHA-256 and MD5 checksums.
+Grab the newest one, install over the top (`adb install -r`), and force-stop NordVPN once.
 
 ## Building from source
 

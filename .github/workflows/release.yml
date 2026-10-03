@@ -1,16 +1,25 @@
 name: Build and release
 
-# Every push to main produces a signed APK, tags it uniquely, and publishes a GitHub release with the
-# APK plus its SHA-256/MD5 sidecars.
+# Every push to main that changes anything beyond docs: bumps the patch version automatically
+# (1.8.1 -> 1.8.2 -> ... -> 1.8.9 -> 1.9 -> 1.9.1 ...), commits the bump, builds the signed APK,
+# and publishes a tagged GitHub release with checksums. Doc-only pushes do nothing.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".gitattributes"
 
 permissions:
   contents: write
 
 jobs:
   release:
+    # The version-bump commit below is authored by the bot and marked [skip ci]; this guard makes the
+    # loop-break explicit even if the message marker is ever edited away.
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +47,43 @@ jobs:
             echo "$KEYSTORE_PROPS_BASE64" | base64 -d > keystore.properties
           fi
 
+      - name: Bump version
+        id: bump
+        run: |
+          CUR=$(grep -oP 'versionName = "\K[0-9.]+' app/build.gradle.kts)
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CUR"
+          if [ -z "$PATCH" ]; then
+            # "1.9" -> "1.9.1"
+            NEW="$MAJOR.$MINOR.1"
+          else
+            PATCH=$((PATCH + 1))
+            if [ "$PATCH" -ge 10 ]; then
+              PATCH=0
+              MINOR=$((MINOR + 1))
+            fi
+            # "1.8.9" rolls to "1.9", then "1.9.1"
+            if [ "$PATCH" -eq 0 ]; then
+              NEW="$MAJOR.$MINOR"
+            else
+              NEW="$MAJOR.$MINOR.$PATCH"
+            fi
+          fi
+          NEWCODE=$((CODE + 1))
+          sed -i "s/versionName = \"$CUR\"/versionName = \"$NEW\"/" app/build.gradle.kts
+          sed -i "s/versionCode = $CODE/versionCode = $NEWCODE/" app/build.gradle.kts
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "code=$NEWCODE" >> "$GITHUB_OUTPUT"
+          echo "Bumped $CUR -> $NEW (versionCode $NEWCODE)"
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts
+          git commit -m "chore(release): v${{ steps.bump.outputs.version }} [skip ci]"
+          git push origin main
+
       # The repo path contains a space, so the ndk-build mirror dirs must be redirected to a safe path.
       - name: Build release APK
         run: |
@@ -45,24 +91,18 @@ jobs:
           ./gradlew clean assembleRelease checksums \
             -PjniMirrorDir="$PWD/.ci/jni" -PbuildMirrorDir="$PWD/.ci/build"
 
-      - name: Read version
-        id: ver
-        run: echo "version=$(grep -oP 'versionName = "\K[0-9.]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
-
       - name: Tag and publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.ver.outputs.version }}
+          VERSION: ${{ steps.bump.outputs.version }}
           APK_DIR: .ci/build/outputs/apk/release
         run: |
-          TAG="v${VERSION}-b${GITHUB_RUN_NUMBER}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          TAG="v${VERSION}"
           git tag "$TAG"
           git push origin "$TAG"
           gh release create "$TAG" \
-            --title "NordOptimizer LSPosed v${VERSION} (build ${GITHUB_RUN_NUMBER})" \
-            --notes "Automated build of commit ${GITHUB_SHA}. Install with: adb install -r NordOptimizer-v${VERSION}-signed.apk" \
+            --title "NordOptimizer LSPosed v${VERSION}" \
+            --notes "Automated build of commit $(git rev-parse --short HEAD). Install with: adb install -r NordOptimizer-v${VERSION}-signed.apk" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.sha256" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.md5"
