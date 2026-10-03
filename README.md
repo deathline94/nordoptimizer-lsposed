@@ -40,7 +40,8 @@ on your device, with counters.
 
 1. Grab the newest `NordOptimizer-v*.apk` from
    [Releases](https://github.com/deathline94/nordoptimizer-lsposed/releases) and install it
-   (`adb install -r NordOptimizer-v*.apk`, or just sideload the file).
+   (`adb install -r NordOptimizer-v*.apk`, or just sideload the file). Updating later is the same:
+   install the new APK over the top and force-stop NordVPN once — no reboot needed.
 2. Open **LSPosed → Modules → NordOptimizer LSPosed**, enable it, and set its scope to
    **NordVPN only**.
 3. > ⚠️ **Required step:** LSPosed → Settings → Framework → **Invalidate inline hooks** → tick
@@ -88,13 +89,6 @@ Long-press any switch in the app for the same explanation in place.
   Junk packets do not address this problem.
 - **"Too many connections / device limit reached"** → that is your Nord account's device cap, not the
   module. Remove an old device in your Nord account dashboard.
-
-## Updates
-
-Versioning is automatic — you never touch it. Every push to `main` that changes anything beyond docs bumps
-the patch version (1.8.1 → 1.8.2 → … → 1.8.9 → 1.9 → 1.9.1 …), builds a signed APK and publishes it under
-[Releases](https://github.com/deathline94/nordoptimizer-lsposed/releases) with SHA-256 and MD5 checksums.
-Grab the newest one, install over the top (`adb install -r`), and force-stop NordVPN once.
 
 ## Building from source
 
