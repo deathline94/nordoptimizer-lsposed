@@ -1,0 +1,68 @@
+name: Build and release
+
+# Every push to main produces a signed APK, tags it uniquely, and publishes a GitHub release with the
+# APK plus its SHA-256/MD5 sidecars.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # AGP downloads the pinned NDK (27.3.13750724) itself once licenses are accepted.
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PROPS_BASE64: ${{ secrets.KEYSTORE_PROPS_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > keystore.jks
+          else
+            echo "::warning::KEYSTORE_BASE64 not set - the APK will fall back to the debug key"
+          fi
+          if [ -n "$KEYSTORE_PROPS_BASE64" ]; then
+            echo "$KEYSTORE_PROPS_BASE64" | base64 -d > keystore.properties
+          fi
+
+      # The repo path contains a space, so the ndk-build mirror dirs must be redirected to a safe path.
+      - name: Build release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew clean assembleRelease checksums \
+            -PjniMirrorDir="$PWD/.ci/jni" -PbuildMirrorDir="$PWD/.ci/build"
+
+      - name: Read version
+        id: ver
+        run: echo "version=$(grep -oP 'versionName = "\K[0-9.]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          APK_DIR: .ci/build/outputs/apk/release
+        run: |
+          TAG="v${VERSION}-b${GITHUB_RUN_NUMBER}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "Nord Optimizer v${VERSION} (build ${GITHUB_RUN_NUMBER})" \
+            --notes "Automated build of commit ${GITHUB_SHA}. Install with: adb install -r NordOptimizer-v${VERSION}-signed.apk" \
+            "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk" \
+            "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.sha256" \
+            "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.md5"

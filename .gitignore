@@ -1,0 +1,24 @@
+# Build output
+.gradle/
+build/
+app/build/
+.ci/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local Android SDK path
+local.properties
+
+# Signing material — never commit; CI reads it from Actions secrets
+keystore.jks
+keystore.properties
+*.keystore
+
+# Reference APK of the target app (copyrighted, 50 MB)
+*.apkm
+
+# ZCode workspace artifacts
+.zcode/

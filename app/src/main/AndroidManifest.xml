@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <package android:name="com.nordvpn.android" />
+    </queries>
+
+    <application
+        android:label="Nord Optimizer"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:hasCode="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+
+        <!-- CATEGORY_INFO, not CATEGORY_LAUNCHER: launcher apps only list ACTION_MAIN/CATEGORY_LAUNCHER, so
+             the module has no drawer icon. PackageManager.getLaunchIntentForPackage() - what LSPosed manager's
+             launch button calls - checks CATEGORY_INFO first, so the manager still opens it directly. -->
+        <activity
+            android:name="com.nordoptimizer.lsposed.ui.MainActivity"
+            android:exported="true"
+            android:excludeFromRecents="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.INFO" />
+            </intent-filter>
+        </activity>
+
+        <!-- LSPosed module metadata -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Cuts NordVPN's telemetry, tracker DNS and promo nags. Verified against NordVPN 9.13.2 and 9.14.1." />
+
+        <meta-data
+            android:name="xposedminversion"
+            android:value="93" />
+
+        <meta-data
+            android:name="xposedscope"
+            android:resource="@array/xposed_scope" />
+
+        <provider
+            android:name="com.nordoptimizer.lsposed.common.StatusProvider"
+            android:authorities="com.nordoptimizer.lsposed.status"
+            android:exported="true" />
+
+    </application>
+</manifest>
