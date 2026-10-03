@@ -106,3 +106,5 @@ jobs:
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.sha256" \
             "$APK_DIR/NordOptimizer-v${VERSION}-signed.apk.md5"
+
+# Patch version rolls over at ten: 1.8.9 -> 1.9 -> 1.9.1
