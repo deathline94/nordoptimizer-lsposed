@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NordOptimizer"
+rootProject.name = "NordOptimizerLSPosed"
 include(":app")

@@ -144,7 +144,7 @@ public class MainActivity extends Activity {
         root.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView title = text("NORD OPTIMIZER", 15, ACCENT, Typeface.DEFAULT_BOLD);
+        TextView title = text("NORDOPTIMIZER LSPosed", 15, ACCENT, Typeface.DEFAULT_BOLD);
         title.setLetterSpacing(0.08f);
         row.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -243,7 +243,7 @@ public class MainActivity extends Activity {
         TextView setupTitle = text("ONE-TIME SETUP", 11, GOOD, Typeface.DEFAULT_BOLD);
         setupTitle.setLetterSpacing(0.1f);
         setupCard.addView(setupTitle);
-        step(setupCard, "1", "In LSPosed, enable Nord Optimizer with NordVPN as its only scope.");
+        step(setupCard, "1", "In LSPosed, enable NordOptimizer LSPosed with NordVPN as its only scope.");
         step(setupCard, "2", "LSPosed → Settings → Framework → Invalidate inline hooks → tick NordVPN."
                 + " NordVPN's tamper protection closes the app seconds after launch without this - every"
                 + " module needs it, not just this one.");

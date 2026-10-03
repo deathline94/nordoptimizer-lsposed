@@ -6,7 +6,7 @@
     </queries>
 
     <application
-        android:label="Nord Optimizer"
+        android:label="NordOptimizer LSPosed"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:hasCode="true"
