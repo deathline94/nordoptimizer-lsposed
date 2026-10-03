@@ -39,8 +39,8 @@ android {
         minSdk = 27
         targetSdk = 34
         applicationId = "com.nordoptimizer.lsposed"
-        versionCode = 12
-        versionName = "1.8.1"
+        versionCode = 13
+        versionName = "1.8.2"
 
         // Debug aid for bisection: -PhookGroups=moose installs only that group, so a target app that
         // reacts badly can be narrowed to one hook set without editing source each time.
